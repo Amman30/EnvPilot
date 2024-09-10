@@ -7,18 +7,16 @@ import (
 )
 
 func main() {
-	// Initialize the configuration by loading environment variables from a specified file
+	
 	config.Init(".env.example")
 
-
-	// Example 1: Retrieve an integer value with a default
 	port, err := config.Env.GetAsInt("PORT", 8080)
 	if err != nil {
 		log.Fatalf("Error retrieving PORT: %v", err)
 	}
 	log.Printf("Port value: %d", port)
 
-	// Example 2: Retrieve a boolean value with a default
+
 	debug, err := config.Env.GetAsBool("DEBUG", false)
 	if err != nil {
 		log.Printf("Error retrieving DEBUG: %v", err)
