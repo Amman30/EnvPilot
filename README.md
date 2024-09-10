@@ -7,7 +7,7 @@
 To install **`EnvPilot`**, use the following `go get` command:
 
 ```sh
-go get github.com/Amman30/EnvPilot
+go get github.com/Amman30/EnvPilot/config@v0.1.0
 ```
 
 # Retrieving Environment Variables
