@@ -17,7 +17,7 @@ Once EnvPilot is installed, you can use the CLI to manage environment variables.
 
 # Command
 ```bash
-go install github.com/Amman30/EnvPilot/cmd/cli@latest
+go install github.com/Amman30/EnvPilot/cmd/cli@0.1.1
 ```
 
 # Set Environment Variables
