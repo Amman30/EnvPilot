@@ -1,4 +1,4 @@
-package config
+package pilot
 
 import (
 	"bufio"
@@ -7,29 +7,42 @@ import (
 	"os"
 	"strconv"
 	"strings"
+
+	"github.com/fsnotify/fsnotify"
 )
 
 type EnvStore struct {
 	variables map[string]interface{}
+	filePath  string
+	watcher   *fsnotify.Watcher
 }
 
 // Global instance to hold environment variables
-var Env = &EnvStore{variables: make(map[string]interface{})}
+var Env *EnvStore
 
-// init initializes the EnvStore by loading environment variables from the default ".env" file.
+// Init initializes the EnvStore by loading environment variables from the specified file.
+// It also starts a watcher to reload the file when it changes.
 func Init(filename string) {
-    if filename == "" {
-        filename = ".env"
-    }
-    loadEnvFile(filename)
+	if filename == "" {
+		filename = ".env"
+	}
+
+	// Initialize EnvStore
+	Env = &EnvStore{
+		variables: make(map[string]interface{}),
+		filePath:  filename,
+	}
+	Env.loadEnvFile()
+
+	// Start file watcher
+	if err := Env.startWatching(); err != nil {
+		log.Fatalf("Error starting file watcher: %s", err)
+	}
 }
 
 // loadEnvFile reads environment variables from a specified file and populates the EnvStore.
-// It opens the file, reads it line by line, and parses key-value pairs to store in the EnvStore.
-// Lines starting with "#" or that are empty are ignored. The function logs and terminates the program
-// if the file cannot be opened or read.
-func loadEnvFile(filename string) {
-	file, err := os.Open(filename)
+func (e *EnvStore) loadEnvFile() {
+	file, err := os.Open(e.filePath)
 	if err != nil {
 		log.Fatalf("Error opening .env file: %s", err)
 	}
@@ -54,12 +67,48 @@ func loadEnvFile(filename string) {
 		value := strings.TrimSpace(parts[1])
 
 		// Store the key-value pair in the Variables map
-		Env.variables[key] = value
+		e.variables[key] = value
 	}
 
 	if err := scanner.Err(); err != nil {
 		log.Fatalf("Error reading .env file: %s", err)
 	}
+}
+
+// startWatching sets up a file watcher to reload the environment variables when the file changes.
+func (e *EnvStore) startWatching() error {
+	watcher, err := fsnotify.NewWatcher()
+	if err != nil {
+		return err
+	}
+	e.watcher = watcher
+
+	err = watcher.Add(e.filePath)
+	if err != nil {
+		return err
+	}
+
+	go func() {
+		for {
+			select {
+			case event, ok := <-watcher.Events:
+				if !ok {
+					return
+				}
+				if event.Op&fsnotify.Write == fsnotify.Write {
+					log.Println("Environment file changed. Reloading...")
+					e.loadEnvFile()
+				}
+			case err, ok := <-watcher.Errors:
+				if !ok {
+					return
+				}
+				log.Printf("Error watching file: %s", err)
+			}
+		}
+	}()
+
+	return nil
 }
 
 // GetAsString retrieves the value of an environment variable as a string. If the variable is not found
@@ -108,7 +157,7 @@ func (e *EnvStore) GetAsBool(key string, defaultValue ...bool) (bool, error) {
 		case string:
 			b, err := strconv.ParseBool(v)
 			if err == nil {
-				e.variables[key] = b 
+				e.variables[key] = b
 				return b, nil
 			}
 		case bool:
@@ -120,7 +169,6 @@ func (e *EnvStore) GetAsBool(key string, defaultValue ...bool) (bool, error) {
 	}
 	return false, errors.New("variable not found or type mismatch and no default value provided")
 }
-
 
 // GetAsFloat retrieves the value of an environment variable as a float. If the variable is not found
 // and a default value is provided, the default value is returned. If no default value is provided and
@@ -147,56 +195,51 @@ func (e *EnvStore) GetAsFloat(key string, defaultValue ...float64) (float64, err
 // GetAsAny retrieves the value of an environment variable as any type specified by targetType.
 // The targetType must be one of "string", "int", "bool", or "float". If the variable is not found and
 // a default value is provided, the default value is returned. If no default value is provided and
-// the variable is not found or cannot be converted to the requested type, an error is returned.
+// the variable is not found or cannot be converted to the requested
 func (e *EnvStore) GetAsAny(key string, targetType string, defaultValue ...interface{}) (interface{}, error) {
-    if value, exists := e.variables[key]; exists {
-        switch targetType {
-        case "string":
-            if str, ok := value.(string); ok {
-                return str, nil
-            }
-        case "int":
-            switch v := value.(type) {
-            case string:
-                i, err := strconv.Atoi(v)
-                if err == nil {
-                    e.variables[key] = i
-                    return i, nil
-                }
-            case int:
-                return v, nil
-            }
-        case "bool":
-            switch v := value.(type) {
-            case string:
-                b, err := strconv.ParseBool(v)
-                if err == nil {
-                    e.variables[key] = b
-                    return b, nil
-                }
-            case bool:
-                return v, nil
-            }
-        case "float":
-            switch v := value.(type) {
-            case string:
-                f, err := strconv.ParseFloat(v, 64)
-                if err == nil {
-                    e.variables[key] = f
-                    return f, nil
-                }
-            case float64:
-                return v, nil
-            }
-        }
-    }
-    if len(defaultValue) > 0 {
-        return defaultValue[0], nil
-    }
-    return nil, errors.New("variable not found or cannot be converted to the requested type")
+	if value, exists := e.variables[key]; exists {
+		switch targetType {
+		case "string":
+			if str, ok := value.(string); ok {
+				return str, nil
+			}
+		case "int":
+			switch v := value.(type) {
+			case string:
+				i, err := strconv.Atoi(v)
+				if err == nil {
+					e.variables[key] = i
+					return i, nil
+				}
+			case int:
+				return v, nil
+			}
+		case "bool":
+			switch v := value.(type) {
+			case string:
+				b, err := strconv.ParseBool(v)
+				if err == nil {
+					e.variables[key] = b
+					return b, nil
+				}
+			case bool:
+				return v, nil
+			}
+		case "float":
+			switch v := value.(type) {
+			case string:
+				f, err := strconv.ParseFloat(v, 64)
+				if err == nil {
+					e.variables[key] = f
+					return f, nil
+				}
+			case float64:
+				return v, nil
+			}
+		}
+	}
+	if len(defaultValue) > 0 {
+		return defaultValue[0], nil
+	}
+	return nil, errors.New("variable not found or cannot be converted to the requested type")
 }
-
-
-
-
-

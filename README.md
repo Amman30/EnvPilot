@@ -108,6 +108,13 @@ log.Infof("Value: %d", value.(int))
 
 ```
 
+
+# Dynamic Configuration Reloading
+
+`EnvPilot` includes support for dynamic configuration reloading using the `fsnotify` package. This allows your application to automatically reload environment, making it easier to adapt to configuration updates without restarting the application.
+
+To enable dynamic reloading, simply ensure that `fsnotify` is included in your project dependencies. The package will monitor the specified file path for changes and reload the configuration as needed.
+
 ## License
 
 This project is licensed under the [MIT License](LICENSE).
