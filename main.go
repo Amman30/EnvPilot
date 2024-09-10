@@ -1,8 +1,9 @@
 package main
 
 import (
-	"EnvPilot/config"
 	"log"
+
+	"github.com/Amman30/EnvPilot/config"
 )
 
 func main() {
