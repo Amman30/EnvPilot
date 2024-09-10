@@ -1,26 +1,54 @@
 # EnvPilot
 
-**`EnvPilot`** is a Go package designed for managing environment variables in your Go applications. It offers a simple and flexible way to load and access environment variables with support for default values and type safety.
+**`EnvPilot`**  is a Go package and CLI tool for managing environment variables. With EnvPilot, you can easily set, retrieve, and manage environment variables both programmatically and through the command line.It offers a simple and flexible way to load and access environment variables with support for default values and type safety.
+
 
 **Installation**
 
 To install **`EnvPilot`**, use the following `go get` command:
 
 ```sh
-go get github.com/Amman30/EnvPilot/config@v0.1.0
+go get github.com/Amman30/EnvPilot@v0.1.1
 ```
+
+# CLI Usage
+
+Once EnvPilot is installed, you can use the CLI to manage environment variables. Here are some examples:
+
+# Command
+```bash
+go install github.com/Amman30/EnvPilot/cmd/cli@latest
+```
+
+# Set Environment Variables
+
+To set an environment variable, use the set command. You can specify the variable type and the file to save it to.
+
+Example to set an integer variable:
+``` bash
+pilot set MY_VAR=123222 --type int --file .env
+```
+
+Example to set an string variable in .env.example:
+pilot set GREETING=Hello --type string --file .env.example
 
 # Retrieving Environment Variables
 ```bash
 package main
 
 import (
-	"github.com/Amman30/EnvPilot/config"
+    "fmt"
+    "log"
+
+    "github.com/Amman30/EnvPilot/pkg/pilot"
 )
 
 func main() {
-	// Initialize the configuration by specifying the .env file
-	config.Init(".env.example")   // you can also use .env.production , if not provided .env is default value
+    // Initialize environment from .env file
+    err := pilot.SetEnv(".env")
+    if err != nil {
+        log.Fatalf("Error initializing environment: %v", err)
+    }
 }
 ```
 
@@ -36,7 +64,7 @@ The `GetAsString` method retrieves a string value from the environment variables
 ### Example: Retrieve a String
 
 ```go
-value, err := config.Env.GetAsString("KEY", "default_value")
+value, err := pilot.Env.GetAsString("KEY", "default_value")
 if err != nil {
 	log.Fatalf("Error retrieving KEY: %v", err)
 }
@@ -45,7 +73,7 @@ log.Infof("Value: %s", value)
 
 # GetAsInt
 ```bash
-value, err := config.Env.GetAsInt("KEY", 8080)
+value, err := pilot.Env.GetAsInt("KEY", 8080)
 if err != nil {
 	log.Fatalf("Error retrieving KEY: %v", err)
 }
@@ -64,7 +92,7 @@ The `GetAsBool` method retrieves a boolean value from the environment variables.
 ### Example: Retrieve a Boolean
 
 ```go
-value, err := config.Env.GetAsBool("KEY", false)
+value, err := pilot.Env.GetAsBool("KEY", false)
 if err != nil {
 	log.Fatalf("Error retrieving KEY: %v", err)
 }
@@ -82,7 +110,7 @@ The `GetAsFloat` method retrieves a float value from the environment variables. 
 ### Example: Retrieve a Float
 
 ```go
-value, err := config.Env.GetAsFloat("KEY", 0.1)
+value, err := pilot.Env.GetAsFloat("KEY", 0.1)
 if err != nil {
 	log.Fatalf("Error retrieving KEY: %v", err)
 }
@@ -100,7 +128,7 @@ The `GetAsAny` method retrieves a value of any type from the environment variabl
 ### Example: Retrieve an Integer
 
 ```go
-value, err := config.Env.GetAsAny("KEY", "int", 8080)
+value, err := pilot.Env.GetAsAny("KEY", "int", 8080)
 if err != nil {
 	log.Fatalf("Error retrieving KEY: %v", err)
 }

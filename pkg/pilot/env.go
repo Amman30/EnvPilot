@@ -3,6 +3,7 @@ package pilot
 import (
 	"bufio"
 	"errors"
+	"fmt"
 	"log"
 	"os"
 	"strconv"
@@ -10,6 +11,8 @@ import (
 
 	"github.com/fsnotify/fsnotify"
 )
+
+
 
 type EnvStore struct {
 	variables map[string]interface{}
@@ -22,7 +25,7 @@ var Env *EnvStore
 
 // Init initializes the EnvStore by loading environment variables from the specified file.
 // It also starts a watcher to reload the file when it changes.
-func Init(filename string) {
+func SetEnv(filename string) {
 	if filename == "" {
 		filename = ".env"
 	}
@@ -242,4 +245,50 @@ func (e *EnvStore) GetAsAny(key string, targetType string, defaultValue ...inter
 		return defaultValue[0], nil
 	}
 	return nil, errors.New("variable not found or cannot be converted to the requested type")
+}
+
+
+func (e *EnvStore) SetEnvValue(key string, value string, valueType string, filename string) error {
+	switch valueType {
+	case "string":
+		e.variables[key] = value
+	case "int":
+		intValue, err := strconv.Atoi(value)
+		if err != nil {
+			return fmt.Errorf("invalid int value: %s", err)
+		}
+		e.variables[key] = intValue
+	case "bool":
+		boolValue, err := strconv.ParseBool(value)
+		if err != nil {
+			return fmt.Errorf("invalid bool value: %s", err)
+		}
+		e.variables[key] = boolValue
+	case "float":
+		floatValue, err := strconv.ParseFloat(value, 64)
+		if err != nil {
+			return fmt.Errorf("invalid float value: %s", err)
+		}
+		e.variables[key] = floatValue
+	default:
+		return fmt.Errorf("unsupported value type: %s", valueType)
+	}
+
+	// Save the updated environment variable to the file
+	return e.saveToFile(key, value, filename)
+}
+
+// saveToFile updates the environment file with the new key-value pair
+func (e *EnvStore) saveToFile(key, value string, filename string) error {
+	file, err := os.OpenFile(filename, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0644)
+	if err != nil {
+		return fmt.Errorf("error opening file %s: %s", filename, err)
+	}
+	defer file.Close()
+
+	_, err = file.WriteString(fmt.Sprintf("%s=%s\n", key, value))
+	if err != nil {
+		return fmt.Errorf("error writing to file %s: %s", filename, err)
+	}
+	return nil
 }
