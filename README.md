@@ -30,7 +30,9 @@ pilot set MY_VAR=123222 --type int --file .env
 ```
 
 Example to set an string variable in .env.example:
+``` bash
 pilot set GREETING=Hello --type string --file .env.example
+```
 
 # Retrieving Environment Variables
 ```bash
