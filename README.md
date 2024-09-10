@@ -106,7 +106,7 @@ if err != nil {
 }
 log.Infof("Value: %d", value.(int))
 
-
+```
 
 ## License
 
