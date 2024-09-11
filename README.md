@@ -1,4 +1,5 @@
 # EnvPilot
+![Screenshot_2024-09-11_at_10 32 09_PM-removebg (1)](https://github.com/user-attachments/assets/089be725-f52f-4c43-9a4b-57bf4eb14eed)
 
 **`EnvPilot`**  is a Go package and CLI tool for managing environment variables. With EnvPilot, you can easily set, retrieve, and manage environment variables both programmatically and through the command line.It offers a simple and flexible way to load and access environment variables with support for default values and type safety.
 
@@ -71,9 +72,18 @@ if err != nil {
 	log.Fatalf("Error retrieving KEY: %v", err)
 }
 log.Infof("Value: %s", value)
+```
 
+## GetAsInt
 
-# GetAsInt
+The `GetAsInt` method retrieves a int value from the environment variables. You can also provide a default value to return if the variable is not found.
+
+### Arguments
+- `key` (string): The environment variable key to retrieve.
+- `defaultValue` (optional int): A default int value to return if the environment variable is not found. If not provided, an error will be returned if the key is not found.
+
+### Example: Retrieve a Integer
+
 ```bash
 value, err := pilot.Env.GetAsInt("KEY", 8080)
 if err != nil {
