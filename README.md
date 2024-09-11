@@ -8,7 +8,7 @@
 To install **`EnvPilot`**, use the following `go get` command:
 
 ```sh
-go get github.com/Amman30/EnvPilot@v0.1.1
+go get github.com/Amman30/EnvPilot@v0.1.3
 ```
 
 # CLI Usage
